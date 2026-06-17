@@ -1,0 +1,34 @@
+{
+  "name": "deepseek-token-monitor",
+  "version": "0.1.0",
+  "description": "DeepSeek monitoring assistant for Claude Code token usage, cache hit health, and safe diagnostics.",
+  "main": "src/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "dev:proxy": "node src/dev-server.js",
+    "doctor": "node src/cli.js doctor",
+    "test": "node --test"
+  },
+  "keywords": [
+    "claude-code",
+    "claude",
+    "deepseek",
+    "token",
+    "token-usage",
+    "cache",
+    "prompt-caching",
+    "ccswitch",
+    "anthropic-api",
+    "openai-compatible",
+    "tray",
+    "monitor",
+    "macos",
+    "windows"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^39.2.6"
+  }
+}
