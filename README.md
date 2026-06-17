@@ -33,6 +33,24 @@ It does not try to be a giant system monitor. The core feature is: **show token 
 - **Controlled repair**: safe pre-checks can run automatically; destructive actions still require confirmation.
 - **macOS + Windows direction**: macOS tray popover is the primary tested version; Windows can run the same Electron app and local proxy.
 
+## 中文亮点
+
+- **看得懂钱花在哪**：实时显示今日 Token、请求次数、今日预估消耗和 DeepSeek 余额。
+- **看得懂缓存是否健康**：区分命中、未命中和输出 Token，不把新对话预热误判成故障。
+- **看得懂哪个模型在消耗**：单独显示 V4 Flash / V4 Pro 的请求次数和 Token 占比。
+- **体检不是吓人**：只有长会话持续低命中、未命中 Token 突然放大、请求连续失败时才提醒。
+- **修复不乱动配置**：能自动预检查；清理缓存、禁用插件、改配置都需要用户确认并保留备份。
+
+## 真实场景对比
+
+缓存命中异常时，工具会把风险高亮出来，并给出修复建议：
+
+![缓存命中率偏低时的风险提示](docs/assets/cache-risk.png)
+
+运行体检和修复建议后，状态恢复为健康，趋势图仍保留命中/未命中/输出明细：
+
+![运行体检修复后的健康状态](docs/assets/cache-recovered.png)
+
 ## What Makes It Different
 
 Most API dashboards show usage after the fact. This tool focuses on the Claude Code + DeepSeek workflow itself:
