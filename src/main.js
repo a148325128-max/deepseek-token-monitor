@@ -92,6 +92,12 @@ function toggleWindow() {
 }
 
 async function main() {
+  app.setName("DeepSeek监控助手");
+  app.setAboutPanelOptions({
+    applicationName: "DeepSeek监控助手",
+    applicationVersion: app.getVersion(),
+    copyright: "Claude Code + DeepSeek Token Monitor",
+  });
   if (process.platform === "darwin") app.dock.hide();
   const config = loadConfig();
   const store = new EventStore(config.dataDir);

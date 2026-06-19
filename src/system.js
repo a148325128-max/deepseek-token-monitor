@@ -3,9 +3,14 @@ const { execFile } = require("node:child_process");
 
 function execFileText(command, args) {
   return new Promise((resolve) => {
-    execFile(command, args, { timeout: 3000 }, (error, stdout) => {
-      resolve(error ? "" : stdout);
-    });
+    try {
+      const child = execFile(command, args, { timeout: 3000 }, (error, stdout) => {
+        resolve(error ? "" : stdout);
+      });
+      child.on("error", () => resolve(""));
+    } catch {
+      resolve("");
+    }
   });
 }
 
@@ -73,6 +78,22 @@ async function getSystemMemoryStats() {
   return stats;
 }
 
+function safeUptime() {
+  try {
+    return Math.round(os.uptime());
+  } catch {
+    return 0;
+  }
+}
+
+function safeLoadavg() {
+  try {
+    return os.loadavg();
+  } catch {
+    return [];
+  }
+}
+
 async function getClaudeProcessStats() {
   if (process.platform === "win32") {
     const output = await execFileText("powershell.exe", [
@@ -114,10 +135,10 @@ async function getSystemStatus() {
   ]);
   return {
     platform: process.platform,
-    uptimeSec: Math.round(os.uptime()),
+    uptimeSec: safeUptime(),
     cpu,
     memory,
-    loadavg: os.loadavg(),
+    loadavg: safeLoadavg(),
     claude,
   };
 }

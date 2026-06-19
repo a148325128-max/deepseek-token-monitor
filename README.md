@@ -4,6 +4,15 @@
 
 ![DeepSeek监控助手 preview](docs/assets/deepseek-monitor-assistant-preview.png)
 
+## Download
+
+Packaged desktop builds are published in [GitHub Releases](https://github.com/a148325128-max/deepseek-token-monitor/releases):
+
+- macOS Apple Silicon: `DeepSeek-Monitor-0.1.0-mac-arm64.dmg`
+- Windows x64 portable app: `DeepSeek-Monitor-0.1.0-win-x64.exe`
+
+macOS may show a security warning because the app is not notarized yet. If that happens, open it from Finder with right click -> Open.
+
 ## Why This Exists
 
 Claude Code + DeepSeek is powerful, but real usage has a very specific pain:
