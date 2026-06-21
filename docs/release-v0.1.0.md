@@ -5,12 +5,12 @@
 ## 下载
 
 - macOS Apple Silicon：`DeepSeek-Monitor-0.1.0-mac-arm64.dmg`
-- Windows x64：`DeepSeek-Monitor-0.1.0-win-x64.exe`
+- Windows x64：`DeepSeek-Monitor-0.1.0-win-x64-Setup.exe`
 
 ## 本次更新
 
 - 新增 macOS 桌面应用打包，菜单栏可显示 `DS` 图标。
-- 新增 Windows x64 单文件 exe，可直接运行。
+- 新增 Windows x64 安装包，会创建开始菜单/桌面快捷方式。
 - 新增应用图标资源，桌面端不再显示默认 Electron 图标。
 - 新增 electron-builder 打包配置，后续可持续生成安装包。
 - 修复受限环境下系统状态扫描失败导致测试失败的问题。
@@ -19,5 +19,5 @@
 ## 注意
 
 - macOS 版本当前未做 Apple notarization，首次打开可能需要右键选择“打开”。
-- Windows 当前为便携版 exe，不需要安装器；如果安全软件提醒，请选择信任后运行。
+- Windows 安装包当前未做代码签名，如果安全软件或 SmartScreen 提醒，请选择信任后运行。
 - 本工具不会保存 prompt 或模型回复，只保存 Token、命中率、状态码、延迟等用量元数据。

@@ -13,8 +13,8 @@
     "build:icons": "node scripts/package-mac.js --icons-only",
     "package:mac-app": "node scripts/package-mac.js",
     "dist:mac": "npm run build:icons && electron-builder --mac dmg",
-    "dist:win": "npm run build:icons && electron-builder --win portable --x64",
-    "dist:all": "npm run build:icons && electron-builder --mac dmg --win portable"
+    "dist:win": "npm run build:icons && electron-builder --win nsis --x64",
+    "dist:all": "npm run build:icons && electron-builder --mac dmg --win nsis"
   },
   "keywords": [
     "claude-code",
@@ -83,7 +83,7 @@
       "icon": "build/icon.ico",
       "target": [
         {
-          "target": "portable",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
