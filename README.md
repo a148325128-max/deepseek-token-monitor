@@ -8,8 +8,8 @@
 
 Packaged desktop builds are published in [GitHub Releases](https://github.com/a148325128-max/deepseek-token-monitor/releases):
 
-- macOS Apple Silicon: `DeepSeek-Monitor-0.1.0-mac-arm64.dmg`
-- Windows x64 installer: `DeepSeek-Monitor-0.1.0-win-x64-Setup.exe`
+- macOS Apple Silicon: `DeepSeek-Monitor-0.1.1-mac-arm64.dmg`
+- Windows x64 installer: `DeepSeek-Monitor-0.1.1-win-x64-Setup.exe`
 
 macOS may show a security warning because the app is not notarized yet. If that happens, open it from Finder with right click -> Open.
 

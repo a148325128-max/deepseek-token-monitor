@@ -1,7 +1,7 @@
 {
   "name": "deepseek-token-monitor",
   "productName": "DeepSeek监控助手",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DeepSeek monitoring assistant for Claude Code token usage, cache hit health, and safe diagnostics.",
   "main": "src/main.js",
   "type": "commonjs",
@@ -91,6 +91,7 @@
       ]
     },
     "nsis": {
+      "artifactName": "DeepSeek-Monitor-${version}-win-${arch}-Setup.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,

@@ -1,5 +1,5 @@
 const path = require("node:path");
-const { app, BrowserWindow, Tray, Menu, nativeImage, shell } = require("electron");
+const { app, BrowserWindow, Tray, Menu, nativeImage, shell, screen } = require("electron");
 const { loadConfig } = require("./config");
 const { EventStore } = require("./store");
 const { startServer } = require("./proxy-server");
@@ -21,15 +21,20 @@ function trayIcon() {
 }
 
 function createWindow(config) {
+  const workArea = screen.getPrimaryDisplay().workAreaSize;
+  const width = process.platform === "win32" ? 420 : 374;
+  const preferredHeight = process.platform === "win32" ? 760 : 640;
+  const height = Math.max(560, Math.min(preferredHeight, workArea.height - 48));
   window = new BrowserWindow({
-    width: 374,
-    height: 540,
+    width,
+    height,
     show: false,
     frame: false,
     resizable: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
+    backgroundColor: "#00000000",
     vibrancy: process.platform === "darwin" ? "popover" : undefined,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -58,6 +63,7 @@ function createWindow(config) {
 
 function positionWindow() {
   if (!window || !tray) return;
+  const workArea = screen.getPrimaryDisplay().workArea;
   const trayBounds = tray.getBounds();
   const windowBounds = window.getBounds();
   const x = Math.round(trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2);
@@ -65,7 +71,15 @@ function positionWindow() {
     process.platform === "darwin"
       ? Math.round(trayBounds.y + trayBounds.height + 8)
       : Math.round(trayBounds.y - windowBounds.height - 8);
-  window.setPosition(Math.max(8, x), Math.max(8, y), false);
+  const nextX = Math.min(
+    Math.max(workArea.x + 8, x),
+    workArea.x + workArea.width - windowBounds.width - 8,
+  );
+  const nextY = Math.min(
+    Math.max(workArea.y + 8, y),
+    workArea.y + workArea.height - windowBounds.height - 8,
+  );
+  window.setPosition(nextX, nextY, false);
 }
 
 function showWindow() {

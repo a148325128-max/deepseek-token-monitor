@@ -168,12 +168,12 @@ function renderDoctorCta({ findings, monitorReady, isMonitoring }) {
   const button = $("doctor-cta");
   if (!button) return;
   const cls = severityClass(findings);
-  const shouldShow = monitorReady || isMonitoring;
   const hasRepairActions = repairActions(findings).length > 0;
-  button.hidden = !shouldShow;
   button.className = `doctor-cta ${cls}`;
   if (hasRepairActions) {
     button.textContent = "一键修复可处理项";
+  } else if (!monitorReady && !isMonitoring) {
+    button.textContent = "一键体检";
   } else if (findings.some((finding) => finding.severity === "critical" || finding.severity === "warning")) {
     button.textContent = "查看修复建议";
   } else {
@@ -246,7 +246,19 @@ function renderConnectState(settings, claudeConfig) {
   const canReuseCcSwitch = currentProvider?.hasAuthToken && !currentProvider?.alreadyProxied;
   const isProxied = currentProvider?.alreadyProxied || claudeConfig?.claude?.configured;
   const button = $("connect-ccswitch-current");
-  button.hidden = !canReuseCcSwitch;
+  if (button) {
+    button.hidden = false;
+    if (canReuseCcSwitch) {
+      button.dataset.mode = "connect";
+      button.textContent = "开始监控";
+    } else if (isProxied) {
+      button.dataset.mode = "ready";
+      button.textContent = "监控配置已准备";
+    } else {
+      button.dataset.mode = "settings";
+      button.textContent = "配置 Key 开始监控";
+    }
+  }
   renderSettingsKeyState({ settings, claudeConfig, currentProvider, canReuseCcSwitch, isProxied });
   $("settings-message").textContent = isProxied
     ? "监控配置已准备。原 DeepSeek 可随时切回。"
@@ -464,6 +476,21 @@ async function saveBalanceKey() {
 }
 
 async function connectCcSwitchCurrent() {
+  const button = $("connect-ccswitch-current");
+  if (button?.dataset.mode === "settings") {
+    setSettingsPanelOpen(true);
+    accessFormForcedOpen = true;
+    setHidden("access-key-state", true);
+    setHidden("access-key-form", false);
+    $("settings-message").textContent = "粘贴 DeepSeek Key 后，推荐保存到 CC Switch；没有 CC Switch 就直接使用。";
+    $("api-key-input")?.focus();
+    return;
+  }
+  if (button?.dataset.mode === "ready") {
+    await refresh();
+    openDoctorPanel();
+    return;
+  }
   const res = await fetch("/api/ccswitch-connect-current", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -597,7 +624,7 @@ document.addEventListener("click", (event) => {
 document.addEventListener("click", (event) => {
   const panel = $("settings-panel");
   if (!panel || panel.hidden) return;
-  if (event.target.closest("#settings-panel, #settings-toggle")) return;
+  if (event.target.closest("#settings-panel, #settings-toggle, #connect-ccswitch-current")) return;
   setSettingsPanelOpen(false);
 });
 
