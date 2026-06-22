@@ -1,5 +1,5 @@
 const path = require("node:path");
-const { app, BrowserWindow, Tray, Menu, nativeImage, shell, screen } = require("electron");
+const { app, BrowserWindow, Tray, Menu, nativeImage, shell, screen, ipcMain, clipboard } = require("electron");
 const { loadConfig } = require("./config");
 const { EventStore } = require("./store");
 const { startServer } = require("./proxy-server");
@@ -7,9 +7,42 @@ const { startServer } = require("./proxy-server");
 let tray;
 let window;
 let server;
-let lastHoverShowAt = 0;
+
+function iconSvg(color = "template") {
+  const fill =
+    color === "color"
+      ? {
+          primary: "#6ee7b7",
+          secondary: "#60a5fa",
+          foreground: "#ffffff",
+        }
+      : {
+          primary: "#000000",
+          secondary: "#000000",
+          foreground: "#000000",
+        };
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id="bg" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop stop-color="${fill.primary}"/>
+          <stop offset="1" stop-color="${fill.secondary}"/>
+        </linearGradient>
+      </defs>
+      <rect x="3" y="3" width="26" height="26" rx="9" fill="${color === "color" ? "url(#bg)" : fill.primary}"/>
+      <path fill="${fill.foreground}" d="M10.5 8.5h6.2c5.1 0 8.2 3.1 8.2 7.5s-3.1 7.5-8.2 7.5h-6.2v-15Zm4.3 4.1v6.8h1.7c2.5 0 3.8-1.2 3.8-3.4s-1.3-3.4-3.8-3.4h-1.7Z"/>
+    </svg>`;
+}
+
+function nativeIcon(color = "template") {
+  return nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(iconSvg(color)).toString("base64")}`);
+}
 
 function trayIcon() {
+  if (process.platform === "win32") {
+    const image = nativeIcon("color");
+    return image.resize({ width: 18, height: 18 });
+  }
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
       <path fill="#000" d="M3.5 2.2h4.7c4.3 0 6.8 2.6 6.8 6.8s-2.5 6.8-6.8 6.8H3.5V2.2Zm3.1 3v7.6h1.5c2.5 0 3.7-1.4 3.7-3.8s-1.2-3.8-3.7-3.8H6.6Z"/>
@@ -18,6 +51,35 @@ function trayIcon() {
   const image = nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`);
   image.setTemplateImage(true);
   return image;
+}
+
+function isSafeExternalUrl(url) {
+  try {
+    const parsed = new URL(String(url));
+    return ["ccswitch:", "http:", "https:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function registerIpcHandlers() {
+  ipcMain.handle("open-external", async (_event, url) => {
+    if (!isSafeExternalUrl(url)) {
+      throw new Error("不支持打开这个链接");
+    }
+    await shell.openExternal(url);
+    return { ok: true };
+  });
+
+  ipcMain.handle("copy-text", async (_event, text) => {
+    clipboard.writeText(String(text || ""));
+    return { ok: true };
+  });
+
+  ipcMain.handle("hide-window", async () => {
+    if (window && window.isVisible()) window.hide();
+    return { ok: true };
+  });
 }
 
 function createWindow(config) {
@@ -35,6 +97,7 @@ function createWindow(config) {
     alwaysOnTop: true,
     skipTaskbar: true,
     backgroundColor: "#00000000",
+    icon: process.platform === "darwin" ? undefined : nativeIcon("color"),
     vibrancy: process.platform === "darwin" ? "popover" : undefined,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -89,13 +152,6 @@ function showWindow() {
   window.focus();
 }
 
-function showWindowFromHover() {
-  const now = Date.now();
-  if (now - lastHoverShowAt < 500) return;
-  lastHoverShowAt = now;
-  showWindow();
-}
-
 function toggleWindow() {
   if (!window || !tray) return;
   if (window.isVisible()) {
@@ -107,6 +163,7 @@ function toggleWindow() {
 
 async function main() {
   app.setName("DeepSeek监控助手");
+  registerIpcHandlers();
   app.setAboutPanelOptions({
     applicationName: "DeepSeek监控助手",
     applicationVersion: app.getVersion(),
@@ -122,8 +179,6 @@ async function main() {
   tray.setToolTip("DeepSeek监控助手");
   if (process.platform === "darwin") tray.setTitle("DS");
   tray.on("click", toggleWindow);
-  tray.on("mouse-enter", showWindowFromHover);
-  tray.on("mouse-move", showWindowFromHover);
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: "DeepSeek监控助手", enabled: false },
@@ -137,9 +192,6 @@ async function main() {
       { label: "退出", click: () => app.quit() },
     ]),
   );
-  setTimeout(() => {
-    if (window && !window.isVisible()) showWindow();
-  }, 500);
 }
 
 app.whenReady().then(main);

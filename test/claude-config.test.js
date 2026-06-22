@@ -99,6 +99,22 @@ test("builds CC Switch provider deep link", () => {
   assert.equal(url.searchParams.get("app"), "claude");
   assert.equal(url.searchParams.get("endpoint"), "http://127.0.0.1:17860/anthropic");
   assert.equal(url.searchParams.get("apiKey"), "test-deepseek-key-abcdef");
+  assert.equal(url.searchParams.get("target"), "cli");
+  assert.equal(url.searchParams.get("client"), "cli");
+});
+
+test("builds CC Switch GUI-targeted provider deep link without changing app type", () => {
+  const link = buildCcSwitchProviderLink({
+    endpoint: "http://127.0.0.1:17860/anthropic",
+    apiKey: "test-deepseek-key-abcdef",
+    target: "gui",
+  });
+  const url = new URL(link);
+
+  assert.equal(url.searchParams.get("app"), "claude");
+  assert.equal(url.searchParams.get("target"), "gui");
+  assert.equal(url.searchParams.get("client"), "gui");
+  assert.match(url.searchParams.get("name"), /Claude GUI/);
 });
 
 test("creates monitored CC Switch provider copy without exposing key", () => {

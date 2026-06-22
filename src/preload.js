@@ -1,1 +1,7 @@
-// Reserved for future safe renderer bridges. The current UI talks to localhost API routes.
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("deepseekMonitor", {
+  openExternal: (url) => ipcRenderer.invoke("open-external", url),
+  copyText: (text) => ipcRenderer.invoke("copy-text", text),
+  hideWindow: () => ipcRenderer.invoke("hide-window"),
+});

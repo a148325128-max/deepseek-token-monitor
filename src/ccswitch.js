@@ -349,18 +349,23 @@ function connectCurrentCcSwitchProvider(config) {
   };
 }
 
-function buildCcSwitchProviderLink({ name, endpoint, apiKey, model = "deepseek-chat" }) {
+function buildCcSwitchProviderLink({ name, endpoint, apiKey, model = "deepseek-chat", target = "cli" }) {
+  const isGuiTarget = target === "gui";
   const params = new URLSearchParams({
     resource: "provider",
     app: "claude",
-    name: name || "DeepSeek监控助手",
+    name: name || (isGuiTarget ? "DeepSeek监控助手（Claude GUI）" : "DeepSeek监控助手"),
     endpoint,
     apiKey,
     model,
     haikuModel: model,
     sonnetModel: model,
     opusModel: "deepseek-reasoner",
-    notes: "由 DeepSeek监控助手本地生成。导入后在 CC Switch 中确认并切换到该 provider。",
+    target: isGuiTarget ? "gui" : "cli",
+    client: isGuiTarget ? "gui" : "cli",
+    notes: isGuiTarget
+      ? "由 DeepSeek监控助手本地生成。用于 Claude GUI 场景；如果当前 CC Switch 版本不识别 GUI 目标，请在 CC Switch 中手动切换/复用该 provider。"
+      : "由 DeepSeek监控助手本地生成。导入后在 CC Switch 中确认并切换到该 provider。",
   });
   return `ccswitch://v1/import?${params.toString()}`;
 }

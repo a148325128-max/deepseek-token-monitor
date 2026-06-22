@@ -1,7 +1,7 @@
 {
   "name": "deepseek-token-monitor",
   "productName": "DeepSeek监控助手",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "DeepSeek monitoring assistant for Claude Code token usage, cache hit health, and safe diagnostics.",
   "main": "src/main.js",
   "type": "commonjs",

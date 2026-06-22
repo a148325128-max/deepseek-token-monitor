@@ -416,23 +416,62 @@ function readApiKeyInput() {
   return $("api-key-input").value.trim();
 }
 
-async function importCcSwitch() {
+async function openCcSwitchImportLink(link) {
+  const bridge = window.deepseekMonitor;
+  let copied = false;
+  let opened = false;
+
+  if (bridge?.copyText) {
+    try {
+      await bridge.copyText(link);
+      copied = true;
+    } catch {
+      copied = false;
+    }
+  }
+
+  if (bridge?.openExternal) {
+    await bridge.openExternal(link);
+    opened = true;
+  } else {
+    window.location.href = link;
+    opened = true;
+  }
+
+  return { opened, copied };
+}
+
+async function importCcSwitch(target = "cli") {
   const apiKey = readApiKeyInput();
   const res = await fetch("/api/ccswitch-link", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ apiKey }),
+    body: JSON.stringify({ apiKey, target }),
   });
   const payload = await res.json();
   if (!res.ok) {
     $("settings-message").textContent = payload.message || payload.error || "生成 CC Switch 导入链接失败";
     return;
   }
-  $("settings-message").textContent = payload.message;
-  $("api-key-input").value = "";
-  accessFormForcedOpen = false;
-  window.location.href = payload.link;
+  try {
+    const result = await openCcSwitchImportLink(payload.link);
+    $("settings-message").textContent = result.copied
+      ? `${payload.message} 导入链接已复制；请在 CC Switch 中确认保存。`
+      : payload.message;
+    $("api-key-input").value = "";
+    accessFormForcedOpen = false;
+  } catch (error) {
+    $("settings-message").textContent = `没有自动打开 CC Switch：${error.message}。请确认已安装 CC Switch，或改用「不用 CC Switch，直接使用」。`;
+  }
   setTimeout(() => refresh().catch(console.error), 1200);
+}
+
+function closePanel() {
+  if (window.deepseekMonitor?.hideWindow) {
+    window.deepseekMonitor.hideWindow().catch(() => setSettingsPanelOpen(false));
+    return;
+  }
+  setSettingsPanelOpen(false);
 }
 
 async function configureClaude() {
@@ -639,6 +678,7 @@ function on(id, eventName, handler) {
 
 on("refresh", "click", () => refresh().catch(console.error));
 on("settings-toggle", "click", toggleSettingsPanel);
+on("close-panel", "click", closePanel);
 on("doctor-toggle", "click", toggleDoctorPanel);
 on("change-balance-key", "click", () => {
   balanceFormForcedOpen = true;
@@ -665,7 +705,10 @@ on("doctor-cta", "click", async () => {
     button.classList.remove("loading");
   }
 });
-on("import-ccswitch", "click", () => importCcSwitch().catch((error) => {
+on("import-ccswitch", "click", () => importCcSwitch("cli").catch((error) => {
+  $("settings-message").textContent = `导入失败：${error.message}`;
+}));
+on("import-ccswitch-gui", "click", () => importCcSwitch("gui").catch((error) => {
   $("settings-message").textContent = `导入失败：${error.message}`;
 }));
 on("configure-claude", "click", () => configureClaude().catch((error) => {

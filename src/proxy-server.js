@@ -340,13 +340,17 @@ function createServer({ config, store }) {
         sendJson(res, 200, {
           ccSwitch: getCcSwitchStatus(),
           link: buildCcSwitchProviderLink({
-            name: body.name || "DeepSeek监控助手",
+            name: body.name || (body.target === "gui" ? "DeepSeek监控助手（Claude GUI）" : "DeepSeek监控助手"),
             endpoint,
             apiKey,
             model: body.model || "deepseek-chat",
+            target: body.target === "gui" ? "gui" : "cli",
           }),
           endpoint,
-          message: "已打开 CC Switch 导入窗口。确认并切换后，请重启 Claude Code。",
+          message:
+            body.target === "gui"
+              ? "已打开 CC Switch GUI 导入窗口。确认保存后，在 CC Switch 中切换到该 Provider。"
+              : "已打开 CC Switch 导入窗口。确认并切换后，请重启 Claude Code。",
         });
         return;
       }
