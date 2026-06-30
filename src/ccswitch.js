@@ -4,11 +4,22 @@ const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const { localClaudeBaseUrl } = require("./claude-config");
 
-let betterSqlite3 = null;
+let sqlJs = null;
+let initSqlJs = null;
 try {
-  betterSqlite3 = require("better-sqlite3");
+  initSqlJs = require("sql.js");
 } catch {
-  // better-sqlite3 is an optional native dependency. Fall back to sqlite3 CLI.
+  // sql.js is optional. Fall back to sqlite3 CLI.
+}
+
+// sql.js is async (loads WASM). Cache the initialized module.
+let sqlJsReady = null;
+async function getSqlJs() {
+  if (sqlJs) return sqlJs;
+  if (!initSqlJs) return null;
+  if (!sqlJsReady) sqlJsReady = initSqlJs();
+  sqlJs = await sqlJsReady;
+  return sqlJs;
 }
 
 function exists(targetPath) {
@@ -151,15 +162,20 @@ function sqlValue(value) {
   return sqlQuote(value);
 }
 
-function runSqlJson(dbPath, sql) {
+async function runSqlJson(dbPath, sql) {
   if (!exists(dbPath)) return [];
-  // Prefer better-sqlite3 (cross-platform, no CLI dependency).
-  if (betterSqlite3) {
+  // Prefer sql.js (pure JS, works on all platforms).
+  const SQL = await getSqlJs();
+  if (SQL) {
     try {
-      const db = betterSqlite3(dbPath, { readonly: true });
-      const rows = db.prepare(sql).all();
+      const buf = fs.readFileSync(dbPath);
+      const db = new SQL.Database(buf);
+      const rows = db.exec(sql);
       db.close();
-      return rows;
+      if (!rows.length || !rows[0].columns.length) return [];
+      return rows[0].values.map(vals =>
+        Object.fromEntries(rows[0].columns.map((col, i) => [col, vals[i]]))
+      );
     } catch {
       return [];
     }
@@ -175,12 +191,20 @@ function runSqlJson(dbPath, sql) {
   }
 }
 
-function runSql(dbPath, sql) {
-  // Prefer better-sqlite3.
-  if (betterSqlite3) {
+async function runSql(dbPath, sql) {
+  // Prefer sql.js.
+  const SQL = await getSqlJs();
+  if (SQL) {
     try {
-      const db = betterSqlite3(dbPath);
-      db.exec(sql);
+      const buf = fs.readFileSync(dbPath);
+      const db = new SQL.Database(buf);
+      db.run("PRAGMA foreign_keys = OFF;");
+      const statements = sql.split(";").map(s => s.trim()).filter(Boolean);
+      for (const stmt of statements) {
+        db.run(stmt + ";");
+      }
+      const data = db.export();
+      fs.writeFileSync(dbPath, Buffer.from(data));
       db.close();
       return;
     } catch (error) {
@@ -195,8 +219,9 @@ function runSql(dbPath, sql) {
   execFileSync(sqlite, [dbPath, sql], { encoding: "utf8" });
 }
 
-function getTableColumns(dbPath, tableName) {
-  return runSqlJson(dbPath, `PRAGMA table_info(${tableName});`).map((column) => column.name);
+async function getTableColumns(dbPath, tableName) {
+  const rows = await runSqlJson(dbPath, `PRAGMA table_info(${tableName});`);
+  return rows.map((column) => column.name);
 }
 
 function maskConfig(value) {
@@ -223,9 +248,9 @@ function safeJsonParse(text) {
   }
 }
 
-function getCurrentClaudeProvider(config) {
+async function getCurrentClaudeProvider(config) {
   const dbPath = config.ccSwitchDbPath || path.join(os.homedir(), ".cc-switch", "cc-switch.db");
-  const rows = runSqlJson(
+  const rows = await runSqlJson(
     dbPath,
     `
       SELECT
@@ -274,9 +299,9 @@ function getCurrentClaudeProvider(config) {
   };
 }
 
-function getCcSwitchUsageSummary(config) {
+async function getCcSwitchUsageSummary(config) {
   const dbPath = config.ccSwitchDbPath || path.join(os.homedir(), ".cc-switch", "cc-switch.db");
-  const rows = runSqlJson(
+  const rows = await runSqlJson(
     dbPath,
     `
       SELECT
@@ -331,8 +356,8 @@ function updateCcSwitchSettingsCurrentProvider(config, backupDir, providerId) {
   return backupPath;
 }
 
-function connectCurrentCcSwitchProvider(config) {
-  const current = getCurrentClaudeProvider(config);
+async function connectCurrentCcSwitchProvider(config) {
+  const current = await getCurrentClaudeProvider(config);
   const provider = current.provider;
   if (!provider) throw new Error("没有找到 CC Switch 当前 Claude Provider");
   if (!provider.hasAuthToken) throw new Error("当前 CC Switch Provider 没有可复用的 Key 字段");
@@ -346,7 +371,7 @@ function connectCurrentCcSwitchProvider(config) {
   const cloneName = isMonitorProvider ? provider.name : `${provider.name}（监控助手）`;
   const appType = sqlQuote(provider.appType);
   const target = sqlQuote(targetBaseUrl);
-  const providerRows = runSqlJson(
+  const providerRows = await runSqlJson(
     dbPath,
     `SELECT * FROM providers WHERE id = ${sqlQuote(provider.id)} AND app_type = ${appType} LIMIT 1;`,
   );
@@ -357,7 +382,7 @@ function connectCurrentCcSwitchProvider(config) {
   settingsConfig.env = settingsConfig.env || {};
   settingsConfig.env.ANTHROPIC_BASE_URL = targetBaseUrl;
 
-  const providerColumns = getTableColumns(dbPath, "providers");
+  const providerColumns = await getTableColumns(dbPath, "providers");
   const providerValues = providerColumns.map((column) => {
     if (column === "id") return cloneId;
     if (column === "name") return cloneName;
@@ -372,7 +397,7 @@ function connectCurrentCcSwitchProvider(config) {
     return originalRow[column];
   });
 
-  const endpointColumns = getTableColumns(dbPath, "provider_endpoints");
+  const endpointColumns = await getTableColumns(dbPath, "provider_endpoints");
   const endpointValues = endpointColumns.map((column) => {
     if (column === "id") return null;
     if (column === "provider_id") return cloneId;
@@ -382,7 +407,7 @@ function connectCurrentCcSwitchProvider(config) {
     return null;
   });
 
-  runSql(
+  await runSql(
     dbPath,
     `
       BEGIN;
@@ -399,6 +424,7 @@ function connectCurrentCcSwitchProvider(config) {
 
   const claudeSettingsBackupPath = updateClaudeSettingsBaseUrl(config, backupDir);
   const ccSwitchSettingsBackupPath = updateCcSwitchSettingsCurrentProvider(config, backupDir, cloneId);
+  const updatedCurrent = await getCurrentClaudeProvider(config);
   return {
     originalProviderId: provider.id,
     originalProviderName: provider.name,
@@ -408,7 +434,7 @@ function connectCurrentCcSwitchProvider(config) {
     dbBackupPath,
     claudeSettingsBackupPath,
     ccSwitchSettingsBackupPath,
-    provider: getCurrentClaudeProvider(config).provider,
+    provider: updatedCurrent.provider,
   };
 }
 

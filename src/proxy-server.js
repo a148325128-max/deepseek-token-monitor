@@ -304,8 +304,8 @@ function createServer({ config, store }) {
           sendJson(res, 200, {
             claude: getClaudeConfigStatus(config, store),
             ccSwitch: getCcSwitchStatus(),
-            ccSwitchCurrentProvider: getCurrentClaudeProvider(config),
-            ccSwitchUsage: getCcSwitchUsageSummary(config),
+            ccSwitchCurrentProvider: await getCurrentClaudeProvider(config),
+            ccSwitchUsage: await getCcSwitchUsageSummary(config),
           });
           return;
         }
@@ -355,12 +355,12 @@ function createServer({ config, store }) {
         return;
       }
       if (url.pathname === "/api/ccswitch-connect-current" && req.method === "POST") {
-        const result = connectCurrentCcSwitchProvider(config);
+        const result = await connectCurrentCcSwitchProvider(config);
         sendJson(res, 200, {
           result,
           claude: getClaudeConfigStatus(config, store),
           ccSwitch: getCcSwitchStatus(),
-          ccSwitchCurrentProvider: getCurrentClaudeProvider(config),
+          ccSwitchCurrentProvider: await getCurrentClaudeProvider(config),
           message: "已开始监控：原 DeepSeek 配置保留不变。请重启 Claude Code 后再检测。",
         });
         return;
