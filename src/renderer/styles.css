@@ -1027,3 +1027,17 @@ details:not([open]) > :not(summary) {
       inset 0 0 0 1px rgba(159, 220, 231, 0.08);
   }
 }
+
+/* Token 汇总条 */
+.token-summary {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  flex-wrap: wrap;
+}
+.token-summary strong {
+  color: rgba(255,255,255,0.85);
+  margin-left: 2px;
+}
