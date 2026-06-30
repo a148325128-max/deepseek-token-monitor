@@ -135,7 +135,9 @@ function renderDashboard(status, doctor, claudeConfig, balance) {
     claudeConfig?.ccSwitchCurrentProvider?.provider?.alreadyProxied || claudeConfig?.claude?.configured;
   const isMonitoring = usageRequestCount(usage) > 0;
 
-  $("today-token").textContent = compactNumber(usage.totalTokens);
+  // Show effective total tokens (including cache hits) to match DeepSeek billing
+  const effectiveTotal = (usage.totalTokens || 0) + (usage.cacheHitTokens || 0) + (usage.cacheMissTokens || 0);
+  $("today-token").textContent = compactNumber(effectiveTotal);
   setCurrencyDisplay($("balance-amount"), balance?.display || "--");
   $("balance-note").textContent = balance?.message || "未授权";
   $("balance-note").className = `balance-note ${balance?.status || "missing_key"}`;
