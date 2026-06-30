@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeepSeek监控助手</title>
+    <link rel="stylesheet" href="/styles.css?v=0.2.1" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="app-icon">D</span>
+          <div>
+            <h1>DeepSeek监控助手</h1>
+            <p>Claude + Token 体检</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button id="refresh" class="icon-button" title="刷新" aria-label="刷新">↻</button>
+          <button
+            id="settings-toggle"
+            class="icon-button"
+            title="设置 Key 与接入"
+            aria-label="设置 Key 与接入"
+            aria-controls="settings-panel"
+            aria-expanded="false"
+          >⚙</button>
+          <button id="close-panel" class="icon-button close-button" title="关闭面板" aria-label="关闭面板">×</button>
+        </div>
+      </header>
+
+      <section id="settings-panel" class="settings-popover" aria-label="余额与接入" hidden>
+        <div class="settings-head">
+          <div>
+            <h2>余额与接入</h2>
+            <p>Key 只保存在本机</p>
+          </div>
+        </div>
+        <p class="key-note">余额 Key 可以和 Claude Code 使用的 Key 不同，但必须属于同一个 DeepSeek 账号才会显示同一余额。</p>
+        <div id="balance-key-state" class="key-state" hidden>
+          <span>
+            <strong>余额 Key 已保存</strong>
+            <small>用于查询 DeepSeek 账户余额</small>
+          </span>
+          <button id="change-balance-key" class="mini-button">更换余额 Key / 账号</button>
+        </div>
+        <div id="balance-key-form" class="key-form">
+          <label class="field-label" for="balance-key-input">余额查询 Key <span>只用于查询余额</span></label>
+          <input
+            id="balance-key-input"
+            class="key-input"
+            type="password"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="sk-用于查询余额的 DeepSeek Key"
+          />
+          <button id="save-balance-key" class="wide-button">保存余额 Key</button>
+        </div>
+
+        <div class="manual-divider"></div>
+        <h3>手动输入 Key</h3>
+        <p class="key-note">没有自动找到配置时，再粘贴一个新建的 DeepSeek Key。</p>
+        <div id="access-key-state" class="key-state" hidden>
+          <span>
+            <strong id="access-key-title">当前接入已准备</strong>
+            <small id="access-key-desc">Claude Code 已经可以通过本工具监控</small>
+          </span>
+          <button id="change-access-key" class="mini-button">更换接入 Key / 账号</button>
+        </div>
+        <div id="access-key-form" class="key-form">
+          <label class="field-label" for="api-key-input">DeepSeek Key <span>用于接入 Claude Code</span></label>
+          <input
+            id="api-key-input"
+            class="key-input"
+            type="password"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="sk-粘贴新建的 Key"
+          />
+          <div class="setup-actions">
+            <button id="import-ccswitch" class="wide-button">保存到 CC Switch（Claude Code）</button>
+            <button id="import-ccswitch-gui" class="wide-button subtle-button">保存到 CC Switch（Claude GUI）</button>
+            <button id="configure-claude" class="text-button">不用 CC Switch，直接使用</button>
+          </div>
+        </div>
+        <p class="hint" id="settings-message">会自动读取 CC Switch；没有找到时再手动输入。</p>
+      </section>
+
+      <section class="hero-card">
+        <div class="hero-head">
+          <span class="hero-label">账户余额</span>
+          <span id="monitor-badge" class="status-badge neutral">待开始</span>
+        </div>
+        <strong id="balance-amount" class="hero-number">--</strong>
+        <span id="balance-note" class="balance-note">未授权</span>
+        <span id="today-cost" class="daily-cost">今日预估消耗 --</span>
+        <div class="hero-mini-grid">
+          <div>
+            <span>今日 Token</span>
+            <strong id="today-token">--</strong>
+          </div>
+          <div>
+            <span>请求</span>
+            <strong id="request-count">--</strong>
+          </div>
+          <div>
+            <span>命中率</span>
+            <strong id="hit">--</strong>
+          </div>
+        </div>
+        <div class="system-strip" aria-label="本机负载">
+          <span id="system-cpu">CPU --</span>
+          <span id="system-memory">内存 --</span>
+        </div>
+        <button id="doctor-cta" class="doctor-cta">一键体检</button>
+        <button id="connect-ccswitch-current" class="primary-action" data-mode="settings">配置 Key 开始监控</button>
+      </section>
+
+      <section class="model-list" aria-label="模型消耗">
+        <article class="model-row flash" data-model="flash">
+          <span class="model-icon">F</span>
+          <div class="model-copy">
+            <div>
+              <strong>V4 Flash</strong>
+              <span id="flash-cost">--</span>
+            </div>
+            <small id="flash-total">-- Token</small>
+            <div class="model-meter">
+              <span id="flash-meter"></span>
+            </div>
+          </div>
+        </article>
+        <article class="model-row pro" data-model="pro">
+          <span class="model-icon">P</span>
+          <div class="model-copy">
+            <div>
+              <strong>V4 Pro</strong>
+              <span id="pro-cost">--</span>
+            </div>
+            <small id="pro-total">-- Token</small>
+            <div class="model-meter">
+              <span id="pro-meter"></span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="trend-card">
+        <div class="section-head">
+          <div>
+            <h2>Token 趋势</h2>
+            <p id="trend-total">近 7 日</p>
+          </div>
+          <span id="trend-risk" class="risk-pill ok">健康</span>
+        </div>
+        <div id="trend-chart" class="trend-chart" aria-label="Token 趋势柱状图"></div>
+        <div class="chart-legend">
+          <span><i class="hit"></i>命中</span>
+          <span><i class="miss"></i>未命中</span>
+          <span><i class="out"></i>输出</span>
+        </div>
+      </section>
+
+      <section class="doctor-dock">
+        <button id="doctor-toggle" class="doctor-button" aria-expanded="false">
+          <span id="doctor-indicator" class="doctor-indicator neutral">!</span>
+          <span>
+            <strong id="doctor-title">正在检测...</strong>
+            <small id="doctor-text">读取本地状态</small>
+          </span>
+        </button>
+        <div id="doctor-panel" class="doctor-panel" hidden>
+          <div id="findings" class="findings"></div>
+        </div>
+      </section>
+
+      <section class="repair-output" id="repair-output" hidden></section>
+    </main>
+    <script src="/renderer.js?v=0.2.1"></script>
+  </body>
+</html>

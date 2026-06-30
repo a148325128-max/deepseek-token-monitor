@@ -1,0 +1,111 @@
+{
+  "name": "deepseek-token-monitor",
+  "productName": "DeepSeek监控助手",
+  "version": "0.1.2",
+  "description": "DeepSeek monitoring assistant for Claude Code token usage, cache hit health, and safe diagnostics.",
+  "main": "src/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "dev:proxy": "node src/dev-server.js",
+    "doctor": "node src/cli.js doctor",
+    "test": "node --test",
+    "build:icons": "node scripts/package-mac.js --icons-only",
+    "build:ico": "node scripts/package-mac.js --ico-only",
+    "package:mac-app": "node scripts/package-mac.js",
+    "dist:mac": "npm run build:icons && electron-builder --mac dmg",
+    "dist:win": "npm run build:icons && electron-builder --win nsis --x64",
+    "dist:all": "npm run build:icons && electron-builder --mac dmg --win nsis"
+  },
+  "keywords": [
+    "claude-code",
+    "claude",
+    "deepseek",
+    "token",
+    "token-usage",
+    "cache",
+    "prompt-caching",
+    "ccswitch",
+    "anthropic-api",
+    "openai-compatible",
+    "tray",
+    "monitor",
+    "macos",
+    "windows"
+  ],
+  "author": "",
+  "license": "MIT",
+  "build": {
+    "appId": "com.houziai.deepseek-token-monitor",
+    "productName": "DeepSeek监控助手",
+    "copyright": "Copyright © 2026 houziai",
+    "artifactName": "DeepSeek-Monitor-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "README.md",
+      "LICENSE"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "backgroundColor": "#263238",
+      "iconSize": 96,
+      "contents": [
+        {
+          "x": 150,
+          "y": 170
+        },
+        {
+          "x": 420,
+          "y": 170,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "DeepSeek-Monitor-${version}-win-${arch}-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DeepSeek监控助手"
+    }
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.6.0"
+  },
+  "devDependencies": {
+    "electron": "^39.2.6",
+    "electron-builder": "^26.15.3"
+  }
+}
