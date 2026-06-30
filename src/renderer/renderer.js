@@ -135,7 +135,9 @@ function renderDashboard(status, doctor, claudeConfig, balance) {
     claudeConfig?.ccSwitchCurrentProvider?.provider?.alreadyProxied || claudeConfig?.claude?.configured;
   const isMonitoring = usageRequestCount(usage) > 0;
 
-  $("today-token").textContent = compactNumber(usage.totalTokens);
+  // 总 Token = 全部 Token（与 DeepSeek 官方后台计费口径一致）
+  const totalWithCache = (usage.totalTokens || 0) + (usage.cacheHitTokens || 0) + (usage.cacheMissTokens || 0);
+  $("today-token").textContent = compactNumber(totalWithCache);
   $("summary-input").textContent = compactNumber(usage.inputTokens);
   $("summary-output").textContent = compactNumber(usage.outputTokens);
   $("summary-cache-hit").textContent = compactNumber(usage.cacheHitTokens);
